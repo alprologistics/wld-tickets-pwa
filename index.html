@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0F1318">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>WLD Tickets</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0F1318; }
+    #app {
+      position: fixed; inset: 0;
+      width: 100vw; height: 100vh; height: 100dvh;
+      border: 0; display: block; background: #0F1318;
+    }
+    .overlay {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      background: #0F1318; color: #E6E8EB;
+      font: 500 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center; padding: 16px; box-sizing: border-box; z-index: 10;
+    }
+    .hidden { display: none; }
+    .spinner {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid rgba(245,165,36,.25); border-top-color: #F5A524;
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .offline-title { color: #F5A524; font-weight: 700; font-size: 18px; }
+    button {
+      margin-top: 6px; padding: 10px 22px; border: 0; border-radius: 8px;
+      background: #F5A524; color: #0F1318; font: 700 15px system-ui, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="app" title="WLD Tickets" allow="camera; microphone; geolocation; clipboard-read; clipboard-write"></iframe>
+
+  <div id="loading" class="overlay">
+    <div class="spinner" aria-hidden="true"></div>
+    <div>Loading…</div>
+  </div>
+
+  <div id="offline" class="overlay hidden" role="alert">
+    <div class="offline-title">You're offline — check WiFi</div>
+    <div>The app will reload automatically when you're back online.</div>
+    <button type="button" id="retry">Retry</button>
+  </div>
+
+  <script>
+    var EXEC_URL = "https://script.google.com/macros/s/AKfycbxsMZ5mS5WwKLKE40bXBIQiCsIUxXsXCU8HzMkTevw_syrBaidvImf7m9C_7BM2O3PSdA/exec";
+    var frame = document.getElementById("app");
+    var loading = document.getElementById("loading");
+    var offline = document.getElementById("offline");
+    var loaded = false;
+
+    function show(el) { el.classList.remove("hidden"); }
+    function hide(el) { el.classList.add("hidden"); }
+
+    function load() {
+      if (!navigator.onLine) { hide(loading); show(offline); return; }
+      hide(offline); show(loading);
+      loaded = false;
+      frame.src = EXEC_URL;
+    }
+
+    frame.addEventListener("load", function () {
+      if (frame.src) { loaded = true; hide(loading); }
+    });
+
+    window.addEventListener("offline", function () { show(offline); });
+    window.addEventListener("online", function () {
+      hide(offline);
+      if (!loaded) load(); else frame.src = EXEC_URL;
+    });
+    document.getElementById("retry").addEventListener("click", load);
+
+    load();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
